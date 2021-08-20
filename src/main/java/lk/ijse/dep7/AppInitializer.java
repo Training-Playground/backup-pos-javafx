@@ -5,8 +5,10 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import lk.ijse.dep7.dbutils.SingleConnectionDataSource;
 
 import java.io.IOException;
+import java.sql.SQLException;
 
 public class AppInitializer extends Application {
     public static void main(String[] args) {
@@ -20,6 +22,18 @@ public class AppInitializer extends Application {
         primaryStage.setScene(mainScene);
         primaryStage.setTitle("Java FX Backup POS");
         primaryStage.centerOnScreen();
+
+        SingleConnectionDataSource.init("jdbc:mysql://localhost:3306/dep7_backup_pos","root","Hamza@mysql56597");
+        SingleConnectionDataSource.getInstance().getConnection();
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                if (!SingleConnectionDataSource.getInstance().getConnection().isClosed()){
+                    SingleConnectionDataSource.getInstance().getConnection().close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }));
         primaryStage.show();
     }
 }
