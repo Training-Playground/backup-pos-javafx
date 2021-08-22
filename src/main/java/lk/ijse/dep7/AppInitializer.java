@@ -24,7 +24,7 @@ public class AppInitializer extends Application {
         primaryStage.centerOnScreen();
 
         SingleConnectionDataSource.init("jdbc:mysql://localhost:3306/dep7_backup_pos","root","Hamza@mysql56597");
-        SingleConnectionDataSource.getInstance().getConnection();
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 if (!SingleConnectionDataSource.getInstance().getConnection().isClosed()){
