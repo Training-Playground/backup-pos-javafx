@@ -154,12 +154,20 @@ public class ManageCustomersFormController {
         txtCustomerAddress.clear();
     }
 
-    public void btnDelete_OnAction(ActionEvent actionEvent) {
-        tblCustomers.getItems().remove(tblCustomers.getSelectionModel().getSelectedItem());
-        tblCustomers.getSelectionModel().clearSelection();
-        clearTextFields();
-        textFieldSetDisable(true,txtCustomerId,txtCustomerName,txtCustomerAddress);
-        btnSave.setDisable(true);
+    public void btnDelete_OnAction(ActionEvent actionEvent) throws FailedOperationException {
+        try {
+            customerService.deleteCustomer(tblCustomers.getSelectionModel().getSelectedItem().getId());
+            tblCustomers.getItems().remove(tblCustomers.getSelectionModel().getSelectedItem());
+            tblCustomers.getSelectionModel().clearSelection();
+            clearTextFields();
+            textFieldSetDisable(true,txtCustomerId,txtCustomerName,txtCustomerAddress);
+            btnSave.setDisable(true);
+        } catch (NotFoundException e) {
+            e.printStackTrace();
+        } catch (FailedOperationException e) {
+            new Alert(Alert.AlertType.ERROR, e.getMessage()).show();
+            throw e;
+        }
     }
 
     private String generateNewId() {
