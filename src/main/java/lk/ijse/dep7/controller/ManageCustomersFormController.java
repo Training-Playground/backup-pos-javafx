@@ -15,6 +15,12 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import lk.ijse.dep7.dbutils.SingleConnectionDataSource;
+import lk.ijse.dep7.dto.CustomerDTO;
+import lk.ijse.dep7.exception.DuplicateIdentifierException;
+import lk.ijse.dep7.exception.FailedOperationException;
+import lk.ijse.dep7.exception.NotFoundException;
+import lk.ijse.dep7.service.CustomerService;
 import lk.ijse.dep7.util.CustomerTM;
 
 import java.io.IOException;
@@ -32,8 +38,9 @@ public class ManageCustomersFormController {
     public JFXTextField txtCustomerAddress;
     public TableView<CustomerTM> tblCustomers;
     public JFXButton btnAddNewCustomer;
+    private final CustomerService customerService = new CustomerService(SingleConnectionDataSource.getInstance().getConnection());
 
-    public void initialize() {
+    public void initialize() throws FailedOperationException {
         tblCustomers.getColumns().get(0).setCellValueFactory(new PropertyValueFactory<>("id"));
         tblCustomers.getColumns().get(1).setCellValueFactory(new PropertyValueFactory<>("name"));
         tblCustomers.getColumns().get(2).setCellValueFactory(new PropertyValueFactory<>("address"));
@@ -56,6 +63,18 @@ public class ManageCustomersFormController {
 
                 }
         });
+        txtCustomerAddress.setOnAction(event -> btnSave.fire());
+        loadAllCustomers();
+    }
+
+    private void loadAllCustomers() throws FailedOperationException {
+        tblCustomers.getItems().clear();
+        try {
+            customerService.findAllCustomers().forEach(dto -> tblCustomers.getItems().add(new CustomerTM(dto.getId(), dto.getName(), dto.getAddress())));
+        } catch (FailedOperationException e) {
+            new Alert(Alert.AlertType.ERROR, e.getMessage()).show();
+            throw e;
+        }
     }
 
     private void textFieldSetDisable(boolean status, TextField... textFields){
@@ -84,7 +103,7 @@ public class ManageCustomersFormController {
         tblCustomers.getSelectionModel().clearSelection();
     }
 
-    public void btnSave_OnAction(ActionEvent actionEvent) {
+    public void btnSave_OnAction(ActionEvent actionEvent) throws FailedOperationException {
         String id = txtCustomerId.getText();
         String name = txtCustomerName.getText();
         String address = txtCustomerAddress.getText();
@@ -103,14 +122,28 @@ public class ManageCustomersFormController {
 
         if (btnSave.getText().equalsIgnoreCase("save")) {
 
-            /* Todo: Need to Save this DB first */
-            tblCustomers.getItems().add(new CustomerTM(id, name, address));
+            try {
+                customerService.saveCustomer(new CustomerDTO(id, name, address));
+                tblCustomers.getItems().add(new CustomerTM(id, name, address));
+            } catch (DuplicateIdentifierException e) {
+                new Alert(Alert.AlertType.ERROR, e.getMessage()).show();
+            } catch (FailedOperationException e) {
+                new Alert(Alert.AlertType.ERROR, e.getMessage()).show();
+                throw e;
+            }
         }else{
-            /* Todo: Need to update this to DB first ,then proceed*/
-            CustomerTM selectedCustomer = tblCustomers.getSelectionModel().getSelectedItem();
-            selectedCustomer.setName(name);
-            selectedCustomer.setAddress(address);
-            tblCustomers.refresh();
+            try {
+                customerService.updateCustomer(new CustomerDTO(id,name,address));
+                CustomerTM selectedCustomer = tblCustomers.getSelectionModel().getSelectedItem();
+                selectedCustomer.setName(name);
+                selectedCustomer.setAddress(address);
+                tblCustomers.refresh();
+            } catch (NotFoundException e) {
+                e.printStackTrace();
+            } catch (FailedOperationException e) {
+                new Alert(Alert.AlertType.ERROR, e.getMessage()).show();
+                throw e;
+            }
         }
         btnAddNewCustomer.fire();
     }

@@ -12,7 +12,11 @@ import java.util.List;
 
 public class CustomerService {
 
-    private Connection connection = SingleConnectionDataSource.getInstance().getConnection();
+    private Connection connection;
+
+    public CustomerService(Connection connection) {
+        this.connection = connection;
+    }
 
     public void saveCustomer(CustomerDTO customer) throws DuplicateIdentifierException, FailedOperationException {
         try {
@@ -82,7 +86,7 @@ public class CustomerService {
         }
     }
 
-    public List<CustomerDTO> findAllCustomers(){
+    public List<CustomerDTO> findAllCustomers() throws FailedOperationException {
         List<CustomerDTO> customerDTOList = new ArrayList<>();
 
         try {
@@ -93,7 +97,7 @@ public class CustomerService {
                 customerDTOList.add(new CustomerDTO(rst.getString("id"), rst.getString("name"), rst.getString("address") ));
             }
         } catch (SQLException throwables) {
-            throwables.printStackTrace();
+            throw new FailedOperationException("Failed to find customers", throwables);
         }
         return customerDTOList;
     }
